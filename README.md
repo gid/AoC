@@ -9,4 +9,4 @@
 ![](https://img.shields.io/badge/50%20stars-2021-black?logo=adventofcode&style=for-the-badge)
 ![](https://img.shields.io/badge/50%20stars-2022-black?logo=adventofcode&style=for-the-badge)
 ![](https://img.shields.io/badge/50%20stars-2023-black?logo=adventofcode&style=for-the-badge)
-![](https://img.shields.io/badge/50%20stars-2024-black?logo=adventofcode&style=for-the-badge)
+![](https://img.shields.io/badge/2%20stars-2024-black?logo=adventofcode&style=for-the-badge)
