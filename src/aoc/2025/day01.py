@@ -26,9 +26,6 @@ def solve(inputs: str):
     for rotation in rotations:
         turn, amount = rotation[0], int(rotation[1:])
 
-        if amount == 0:
-            continue
-
         clicked_on_zero += amount // 100
         amount = amount % 100
 
@@ -43,8 +40,8 @@ def solve(inputs: str):
             if amount > 0:
                 clicked_on_zero += 1
         else:
-            if value // 100 != 0:
-                clicked_on_zero += int(original_value != 0)
+            if value // 100 != 0 and original_value != 0:
+                clicked_on_zero += 1
 
         value = value % 100
 
