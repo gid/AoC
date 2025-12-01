@@ -48,8 +48,6 @@ def solve(inputs: str):
 
         value = value % 100
 
-        # print(f"Turn: {turn}{amount}    Value: {value%100}    Hit0: {hit_zero}   Pass0: {clicked_on_zero}")
-
     print(f"Part 1: {hit_zero}")
     print(f"Part 2: {clicked_on_zero}\n")
 
