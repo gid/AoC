@@ -5,15 +5,34 @@ from aoc_utils import get_input_data
 actual_input = get_input_data(2025, 2)
 
 
-example_input = """xxx"""
+example_input = """11-22,95-115,998-1012,1188511880-1188511890,222220-222224,1698522-1698528,446443-446449,38593856-38593862,565653-565659,824824821-824824827,2121212118-2121212124"""
 
 
 def solve(inputs: str):
-    values = tuple(map(int, inputs.splitlines()))
+    ranges = inputs.split(",")
 
-    print(f"Part 1: {False}")
-    print(f"Part 2: {False}\n")
+    part1, part2 = 0, 0
+    for start_end in ranges:
+        start, end = map(int, start_end.split("-"))
+        for number in range(start, end + 1):
+            for num_chunks in range(2, len(str(end)) + 1):
+                str_num = str(number)
+                chunk_length, r = divmod(len(str_num), num_chunks)
+                if r != 0:
+                    continue
+                chunks = [
+                    str_num[i : i + chunk_length]
+                    for i in range(0, len(str_num), chunk_length)
+                ]
+                if len(set(chunks)) == 1:
+                    part2 += number
+                    if num_chunks == 2:
+                        part1 += number
+                    break
+
+    print(f"Part 1: {part1}")
+    print(f"Part 2: {part2}\n")
 
 
 solve(example_input)
-# solve(actual_input)
+solve(actual_input)
