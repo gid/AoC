@@ -11,24 +11,21 @@ example_input = """987654321111111
 818181911112111"""
 
 
-def max_joltage(bank: str, num_batteries: int) -> int:
-    if num_batteries == 1:
+def max_joltage(bank: str, batteries: int) -> int:
+
+    if batteries == 1:
         return int(max(bank))
 
-    for j in range(9, 0, -1):
-        try:
-            idx = bank[: -(num_batteries - 1)].index(str(j))
-        except ValueError:
-            continue
-        num_batteries -= 1
-        bank = bank[idx + 1 :]
-        return j * (10 ** (num_batteries)) + max_joltage(bank, num_batteries)
+    batteries -= 1
+    max_battery = int(max(bank[:-batteries]))
+    bank = bank[bank.index(str(max_battery)) + 1 :]
+    return max_battery * (10**batteries) + max_joltage(bank, batteries)
 
 
 def solve(inputs: str):
     banks = inputs.splitlines()
-    print(f"Part 1: {sum(max_joltage(bank, num_batteries=2) for bank in banks)}")
-    print(f"Part 2: {sum(max_joltage(bank, num_batteries=12) for bank in banks)}\n")
+    print(f"Part 1: {sum(max_joltage(bank, batteries=2) for bank in banks)}")
+    print(f"Part 2: {sum(max_joltage(bank, batteries=12) for bank in banks)}\n")
 
 
 solve(example_input)
