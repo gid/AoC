@@ -18,11 +18,11 @@ def max_joltage(bank: str, num_batteries: int) -> int:
     for j in range(9, 0, -1):
         try:
             idx = bank[: -(num_batteries - 1)].index(str(j))
-            return j * (10 ** (num_batteries - 1)) + max_joltage(
-                bank[idx + 1 :], num_batteries - 1
-            )
         except ValueError:
             continue
+        num_batteries -= 1
+        bank = bank[idx + 1 :]
+        return j * (10 ** (num_batteries)) + max_joltage(bank, num_batteries)
 
 
 def solve(inputs: str):
