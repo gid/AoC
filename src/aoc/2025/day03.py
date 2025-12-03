@@ -17,9 +17,9 @@ def max_joltage(bank: str, batteries: int) -> int:
         return int(max(bank))
 
     batteries -= 1
-    max_battery = int(max(bank[:-batteries]))
-    bank = bank[bank.index(str(max_battery)) + 1 :]
-    return max_battery * (10**batteries) + max_joltage(bank, batteries)
+    max_battery = max(bank[:-batteries])
+    bank = bank[bank.index((max_battery)) + 1 :]
+    return int(max_battery) * (10**batteries) + max_joltage(bank, batteries)
 
 
 def solve(inputs: str):
