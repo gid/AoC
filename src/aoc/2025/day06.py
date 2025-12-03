@@ -15,5 +15,6 @@ def solve(inputs: str):
     print(f"Part 2: {False}\n")
 
 
-solve(example_input)
-# solve(actual_input)
+if __name__ == "__main__":
+    solve(example_input)
+    # solve(actual_input)

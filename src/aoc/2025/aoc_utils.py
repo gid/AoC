@@ -4,6 +4,10 @@ import requests
 import time
 
 
+THIS_YEAR_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIRECTORY = os.path.dirname(THIS_YEAR_DIRECTORY)
+
+
 def download_input_data(year: int, day: int) -> str:
     session_cookie = os.environ.get("AOC_SESSION_COOKIE")
     if not session_cookie:
@@ -15,38 +19,38 @@ def download_input_data(year: int, day: int) -> str:
 
 
 def get_input_data(year: int, day: int) -> str:
-    """Get inout data for the specified year/day (saving locally if not yet downloaded)"""
-    root_dir = os.path.dirname(__file__)
-    filename = f"{root_dir}/inputs/day{str(day).zfill(2)}_input.txt"
+    """Get input data for the specified year/day (saving locally if not yet downloaded)"""
+    year_directory = os.path.join(ROOT_DIRECTORY, str(year))
+    inputs_directory = os.path.join(year_directory, "inputs")
+    filename = os.path.join(inputs_directory, rf"day{str(day).zfill(2)}_input.txt")
     try:
         with open(filename) as file:
             input_data = file.read()
     except FileNotFoundError:
+        if not os.path.exists(inputs_directory):
+            os.makedirs(inputs_directory)
         input_data = download_input_data(year, day)
         with open(filename, "w") as file:
             file.write(input_data)
     return input_data
 
 
-def download_archive_inputs(start_year: int = 2015, end_year: int = 2023):
+def download_archive_inputs(start_year: int = 2015, end_year: int = 2024):
     """Download input data for for the specified years and store in the inputs folder"""
-    for year in range(start_year, end_year):
-        directory = f"{year}/inputs"
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        for day in range(1, 26):
+    for year in range(start_year, end_year + 1):
+        inputs_directory = os.path.join(ROOT_DIRECTORY, str(year), "inputs")
+        if not os.path.exists(inputs_directory):
+            os.makedirs(inputs_directory)
+        for day in range(1, 26 if year <= 2024 else 13):
             get_input_data(year, day)
 
 
-def generate_stub_files(year: int, number_of_days: int = 25):
+def generate_stub_files(year: int):
     """Generate stub files for the specified year"""
-    year_directory = os.path.dirname(__file__)
-    inputs_directory = os.path.join(year_directory, "inputs")
-    if not os.path.exists(inputs_directory):
-        os.makedirs(inputs_directory)
+    year_directory = os.path.join(ROOT_DIRECTORY, str(year))
     with open(os.path.join(year_directory, "__init__.py"), "w") as f:
         pass
-    for day in range(1, number_of_days + 1):
+    for day in range(1, 26 if year <= 2024 else 13):
         with open(os.path.join(year_directory, f"day{day:02d}.py"), "w") as f:
             f.write(f'"""https://adventofcode.com/{year}/day/{day}"""\n\n')
             f.write("from aoc_utils import get_input_data\n\n")
@@ -56,8 +60,9 @@ def generate_stub_files(year: int, number_of_days: int = 25):
             f.write("    values = tuple(map(int, inputs.splitlines()))\n\n")
             f.write('    print(f"Part 1: {False}")\n')
             f.write('    print(f"Part 2: {False}\\n")\n\n\n')
-            f.write("solve(example_input)\n")
-            f.write("# solve(actual_input)\n")
+            f.write('if __name__ == "__main__":\n')
+            f.write("    solve(example_input)\n")
+            f.write("    # solve(actual_input)\n")
 
 
 def print_time_taken(func):
@@ -81,4 +86,4 @@ def print_time_taken(func):
 
 
 if __name__ == "__main__":
-    generate_stub_files(2025, 12)
+    generate_stub_files(2025)
