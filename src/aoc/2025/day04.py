@@ -16,11 +16,11 @@ example_input = """..@@.@@@@.
 .@@@@@@@@.
 @.@.@@@.@."""
 
-DIRECTIONS = [1, 1 + 1j, 1j, -1 + 1j, -1, -1 - 1j, -1j, 1 - 1j]
+ALL_DIRECTIONS = [1, 1 + 1j, 1j, -1 + 1j, -1, -1 - 1j, -1j, 1 - 1j]
 
 
 def count_neighbours(roll: complex, rolls: set[complex]) -> int:
-    return sum(1 for d in DIRECTIONS if (roll + d) in rolls)
+    return sum(1 for d in ALL_DIRECTIONS if (roll + d) in rolls)
 
 
 def accessible_rolls(rolls: set[complex]) -> set[complex]:
@@ -38,8 +38,9 @@ def solve(inputs: str):
 
     rolls_removed = 0
     while rolls_to_remove := accessible_rolls(rolls):
-        rolls_removed += len(rolls_to_remove)
         rolls -= rolls_to_remove
+        rolls_removed += len(rolls_to_remove)
+
     print(f"Part 2: {rolls_removed}\n")
 
 
