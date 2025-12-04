@@ -19,12 +19,12 @@ example_input = """..@@.@@@@.
 ALL_DIRECTIONS = [1, 1 + 1j, 1j, -1 + 1j, -1, -1 - 1j, -1j, 1 - 1j]
 
 
-def count_neighbours(roll: complex, rolls: set[complex]) -> int:
-    return sum(1 for d in ALL_DIRECTIONS if (roll + d) in rolls)
-
-
 def accessible_rolls(rolls: set[complex]) -> set[complex]:
-    return {roll for roll in rolls if count_neighbours(roll, rolls) < 4}
+    return {
+        roll
+        for roll in rolls
+        if sum(1 for d in ALL_DIRECTIONS if (roll + d) in rolls) < 4
+    }
 
 
 def solve(inputs: str):
