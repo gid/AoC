@@ -35,7 +35,12 @@ def solve(inputs: str):
                 rolls.add(complex(x, y))
 
     print(f"Part 1: {len(accessible_rolls(rolls))}")
-    print(f"Part 2: {False}\n")
+
+    rolls_removed = 0
+    while rolls_to_remove := accessible_rolls(rolls):
+        rolls_removed += len(rolls_to_remove)
+        rolls -= rolls_to_remove
+    print(f"Part 2: {rolls_removed}\n")
 
 
 if __name__ == "__main__":
