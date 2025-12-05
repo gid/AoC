@@ -18,50 +18,41 @@ example_input = """3-5
 32"""
 
 
-def collapse_ranges(ranges):
-    collapsed = []
-    for fresh_range in ranges:
-        for existing_range in collapsed:
-            # check if fresh_range overlaps existing_range
-            if not (
-                fresh_range[1] < existing_range[0] or fresh_range[0] > existing_range[1]
-            ):
-                existing_range[0] = min(existing_range[0], fresh_range[0])
-                existing_range[1] = max(existing_range[1], fresh_range[1])
+def collapse_ranges(ranges: list[list[int]]) -> list[list[int]]:
+    collapsed_ranges = []
+    for low, high in ranges:
+        for collapsed_low_high in collapsed_ranges:
+            if not (high < collapsed_low_high[0] or low > collapsed_low_high[1]):
+                collapsed_low_high[0] = min(collapsed_low_high[0], low)
+                collapsed_low_high[1] = max(collapsed_low_high[1], high)
                 break
         else:
-            collapsed.append([fresh_range[0], fresh_range[1]])
-    return collapsed
+            collapsed_ranges.append([low, high])
+    return collapsed_ranges
 
 
 def solve(inputs: str):
     fresh_range_list, ingredients_list = inputs.split("\n\n")
-    ingredient_ids = list(map(int, ingredients_list.splitlines()))
 
-    fresh_ranges = []
-    for a, b in (line.split("-") for line in fresh_range_list.splitlines()):
-        fresh_ranges.append([int(a), int(b)])
+    fresh_ranges = [
+        (int(a), int(b))
+        for a, b in (line.split("-") for line in fresh_range_list.splitlines())
+    ]
 
     fresh_count = 0
-    for ingredient in ingredient_ids:
+    for ingredient in list(map(int, ingredients_list.splitlines())):
         for fresh_range in fresh_ranges:
             if fresh_range[0] <= ingredient <= fresh_range[1]:
                 fresh_count += 1
                 break
     print(f"Part 1: {fresh_count}")
 
-    range_count = len(fresh_ranges)
     while True:
+        prior_range_len = len(fresh_ranges)
         fresh_ranges = collapse_ranges(fresh_ranges)
-        if len(fresh_ranges) == range_count:
+        if len(fresh_ranges) == prior_range_len:
             break
-        range_count = len(fresh_ranges)
-
-    total_fresh = 0
-    for fresh_range in fresh_ranges:
-        total_fresh += fresh_range[1] - fresh_range[0] + 1
-
-    print(f"Part 2: {total_fresh}\n")
+    print(f"Part 2: {sum(b - a + 1 for a, b in fresh_ranges)}\n")
 
 
 if __name__ == "__main__":
