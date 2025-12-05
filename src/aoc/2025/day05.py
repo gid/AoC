@@ -20,24 +20,21 @@ example_input = """3-5
 
 def collapse_ranges(ranges: list[list[int]]) -> list[list[int]]:
     collapsed_ranges = []
-    for low, high in ranges:
-        for collapsed_low_high in collapsed_ranges:
-            if not (high < collapsed_low_high[0] or low > collapsed_low_high[1]):
-                collapsed_low_high[0] = min(collapsed_low_high[0], low)
-                collapsed_low_high[1] = max(collapsed_low_high[1], high)
+    for start, end in ranges:
+        for collapsed_range in collapsed_ranges:
+            if not (end < collapsed_range[0] or start > collapsed_range[1]):
+                collapsed_range[0] = min(collapsed_range[0], start)
+                collapsed_range[1] = max(collapsed_range[1], end)
                 break
         else:
-            collapsed_ranges.append([low, high])
+            collapsed_ranges.append([start, end])
     return collapsed_ranges
 
 
 def solve(inputs: str):
     fresh_range_list, ingredients_list = inputs.split("\n\n")
 
-    fresh_ranges = [
-        (int(a), int(b))
-        for a, b in (line.split("-") for line in fresh_range_list.splitlines())
-    ]
+    fresh_ranges = [(int(a), int(b)) for a, b in (line.split("-") for line in fresh_range_list.splitlines())]
 
     fresh_count = 0
     for ingredient in list(map(int, ingredients_list.splitlines())):
@@ -52,7 +49,7 @@ def solve(inputs: str):
         fresh_ranges = collapse_ranges(fresh_ranges)
         if len(fresh_ranges) == prior_range_len:
             break
-    print(f"Part 2: {sum(b - a + 1 for a, b in fresh_ranges)}\n")
+    print(f"Part 2: {sum(end - start + 1 for start, end in fresh_ranges)}\n")
 
 
 if __name__ == "__main__":
