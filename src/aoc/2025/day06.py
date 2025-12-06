@@ -21,18 +21,16 @@ def solve(inputs: str):
     assert len(set(len(line) for line in number_lines)) == 1
 
     operators = operator_line.split()
-
     numbers = [[] for _ in range(len(operators))]
 
     for line in number_lines:
         for i, value in enumerate(line.split()):
             numbers[i].append(int(value))
-
     answers = [math.prod(vals) if op == "*" else sum(vals) for vals, op in zip(numbers, operators)]
-
     print(f"Part 1: {sum(answers)}")
 
     grand_total = 0
+
     right_chars = "".join(s[-1] for s in number_lines)
     while operators:
         while right_chars.isspace():
@@ -48,10 +46,7 @@ def solve(inputs: str):
             right_chars = "".join(s[-1] for s in number_lines)
 
         operators, operator = operators[:-1], operators[-1]
-        if operator == "*":
-            grand_total += math.prod(values)
-        else:
-            grand_total += sum(values)
+        grand_total += math.prod(values) if operator == "*" else sum(values)
 
     print(f"Part 2: {grand_total}\n")
 
