@@ -25,29 +25,40 @@ example_input = """.......S.......
 
 def solve(inputs: str):
     splitters = set()
-    beams = set()
     for y, row in enumerate(inputs.splitlines()):
         for x, c in enumerate(row):
-            if c == "S":
-                beams.add((x, y))
+            if y == 0 and c == "S":
+                start_x = x
             if c == "^":
                 splitters.add((x, y))
     max_y = y + 1
-    splits = 0
+
+    beams, splits = {start_x}, 0
     for y in range(max_y):
         new_beams = set()
-        for beam in beams:
-            x = beam[0]
+        for x in beams:
             if (x, y) in splitters:
-                new_beams.add((x - 1, y + 1))
-                new_beams.add((x + 1, y + 1))
+                new_beams |= {x - 1, x + 1}
                 splits += 1
             else:
-                new_beams.add((x, y + 1))
+                new_beams.add(x)
         beams = new_beams
-
     print(f"Part 1: {splits}")
-    print(f"Part 2: {False}\n")
+
+    paths = {((start_x, 0),)}
+    timelines = 0
+    while paths:
+        path = paths.pop()
+        x, y = path[-1]
+        if y == max_y:
+            timelines += 1
+            continue
+        if (x, y + 1) not in splitters:
+            paths.add(path + ((x, y + 1),))
+        else:
+            paths |= {path + ((x + 1, y + 1),), path + ((x - 1, y + 1),)}
+
+    print(f"Part 2: {timelines}\n")
 
 
 if __name__ == "__main__":
