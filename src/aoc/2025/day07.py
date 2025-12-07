@@ -1,5 +1,7 @@
 """https://adventofcode.com/2025/day/7"""
 
+from collections import defaultdict
+
 from aoc_utils import get_input_data
 
 actual_input = get_input_data(2025, 7)
@@ -31,7 +33,7 @@ def solve(inputs: str):
                 start_x = x
             if c == "^":
                 splitters.add((x, y))
-    max_y = y + 1
+    max_x, max_y = x + 1, y + 1
 
     beams, splits = {start_x}, 0
     for y in range(max_y):
@@ -45,20 +47,16 @@ def solve(inputs: str):
         beams = new_beams
     print(f"Part 1: {splits}")
 
-    paths = {((start_x, 0),)}
-    timelines = 0
-    while paths:
-        path = paths.pop()
-        x, y = path[-1]
-        if y == max_y:
-            timelines += 1
-            continue
-        if (x, y + 1) not in splitters:
-            paths.add(path + ((x, y + 1),))
-        else:
-            paths |= {path + ((x + 1, y + 1),), path + ((x - 1, y + 1),)}
+    timelines = defaultdict(int)
+    timelines[start_x] = 1
+    for y in range(max_y):
+        for x in range(max_x):
+            if (x, y) in splitters:
+                timelines[x - 1] += timelines[x]
+                timelines[x + 1] += timelines[x]
+                timelines[x] = 0
 
-    print(f"Part 2: {timelines}\n")
+    print(f"Part 2: {sum(timelines.values())}\n")
 
 
 if __name__ == "__main__":
