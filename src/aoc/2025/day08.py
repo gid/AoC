@@ -4,6 +4,7 @@ import heapq
 import math
 
 from itertools import combinations
+from typing import NamedTuple
 
 from aoc_utils import get_input_data
 
@@ -32,24 +33,25 @@ example_input = """162,817,812
 425,690,689"""
 
 
-def solve(inputs: str, part_1_connections: int) -> None:
-    junction_box_circuit = {}
-    for i, line in enumerate(inputs.splitlines()):
-        junction_box_circuit[tuple(map(int, line.split(",")))] = i
+class JunctionBox(NamedTuple):
+    x: int
+    y: int
+    z: int
 
+
+def solve(inputs: str, part_1_connections: int) -> None:
+    junction_box_circuit = {JunctionBox(*map(int, line.split(","))): i for i, line in enumerate(inputs.splitlines())}
     circuits = {i: {junction_box} for junction_box, i in junction_box_circuit.items()}
 
     distances = []
     for a, b in combinations(junction_box_circuit.keys(), 2):
-        distance = (
-            abs(a[0] - b[0]) ** 2 + abs(a[1] - b[1]) ** 2 + abs(a[2] - b[2]) ** 2
-        ) ** 0.5
-        heapq.heappush(distances, (distance, min(a, b), max(a, b)))
+        distance = ((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2) ** 0.5
+        heapq.heappush(distances, (distance, a, b))
 
     n_connections = 0
     while len(circuits) > 1:
         _, a, b = heapq.heappop(distances)
-        if junction_box_circuit[b] != junction_box_circuit[a]:
+        if junction_box_circuit[a] != junction_box_circuit[b]:
             a_circuit, b_circuit = junction_box_circuit[a], junction_box_circuit[b]
             for junction_box in circuits[b_circuit]:
                 junction_box_circuit[junction_box] = a_circuit
@@ -57,10 +59,9 @@ def solve(inputs: str, part_1_connections: int) -> None:
             circuits.pop(b_circuit)
         n_connections += 1
         if n_connections == part_1_connections:
-            top3_sizes = heapq.nlargest(3, (len(s) for s in circuits.values()))
-            print(f"Part 1: {math.prod(top3_sizes)}")
+            print(f"Part 1: {math.prod(heapq.nlargest(3, (len(s) for s in circuits.values())))}")
 
-    print(f"Part 2: {a[0] * b[0]}\n")
+    print(f"Part 2: {a.x * b.x}\n")
 
 
 if __name__ == "__main__":
