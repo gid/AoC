@@ -2,7 +2,6 @@
 
 import heapq
 import math
-
 from itertools import combinations
 from typing import NamedTuple
 
@@ -43,24 +42,23 @@ class JunctionBox(NamedTuple):
 
 
 def solve(inputs: str, part_1_connections: int) -> None:
-    junction_box_circuit = {JunctionBox(*map(int, line.split(","))): i for i, line in enumerate(inputs.splitlines())}
-    circuits = {i: {junction_box} for junction_box, i in junction_box_circuit.items()}
+    box_circuit = {JunctionBox(*map(int, line.split(","))): i for i, line in enumerate(inputs.splitlines())}
+    circuits = {i: {box} for box, i in box_circuit.items()}
+    distances = [(a.distance_to(b), a, b) for a, b in combinations(box_circuit.keys(), 2)]
+    heapq.heapify(distances)
 
-    distances = []
-    for a, b in combinations(junction_box_circuit.keys(), 2):
-        heapq.heappush(distances, (a.distance_to(b), a, b))
-
-    n_connections = 0
+    connections_made = 0
     while len(circuits) > 1:
         _, a, b = heapq.heappop(distances)
-        if junction_box_circuit[a] != junction_box_circuit[b]:
-            a_circuit, b_circuit = junction_box_circuit[a], junction_box_circuit[b]
-            for junction_box in circuits[b_circuit]:
-                junction_box_circuit[junction_box] = a_circuit
+        a_circuit, b_circuit = box_circuit[a], box_circuit[b]
+        if a_circuit != b_circuit:
+            for box in circuits[b_circuit]:
+                box_circuit[box] = a_circuit
             circuits[a_circuit].update(circuits[b_circuit])
             circuits.pop(b_circuit)
-        n_connections += 1
-        if n_connections == part_1_connections:
+
+        connections_made += 1
+        if connections_made == part_1_connections:
             print(f"Part 1: {math.prod(heapq.nlargest(3, (len(s) for s in circuits.values())))}")
 
     print(f"Part 2: {a.x * b.x}\n")
