@@ -38,6 +38,9 @@ class JunctionBox(NamedTuple):
     y: int
     z: int
 
+    def distance_to(self, other: "JunctionBox") -> float:
+        return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2 + (self.z - other.z) ** 2) ** 0.5
+
 
 def solve(inputs: str, part_1_connections: int) -> None:
     junction_box_circuit = {JunctionBox(*map(int, line.split(","))): i for i, line in enumerate(inputs.splitlines())}
@@ -45,8 +48,7 @@ def solve(inputs: str, part_1_connections: int) -> None:
 
     distances = []
     for a, b in combinations(junction_box_circuit.keys(), 2):
-        distance = ((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2) ** 0.5
-        heapq.heappush(distances, (distance, a, b))
+        heapq.heappush(distances, (a.distance_to(b), a, b))
 
     n_connections = 0
     while len(circuits) > 1:
