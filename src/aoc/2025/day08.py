@@ -5,7 +5,7 @@ import math
 
 from itertools import combinations
 
-from aoc_utils import get_input_data, print_time_taken
+from aoc_utils import get_input_data
 
 actual_input = get_input_data(2025, 8)
 
@@ -32,7 +32,6 @@ example_input = """162,817,812
 425,690,689"""
 
 
-@print_time_taken
 def solve(inputs: str, part_1_connections: int) -> None:
     junction_box_circuit = {}
     for i, line in enumerate(inputs.splitlines()):
@@ -61,7 +60,7 @@ def solve(inputs: str, part_1_connections: int) -> None:
             top3_sizes = heapq.nlargest(3, (len(s) for s in circuits.values()))
             print(f"Part 1: {math.prod(top3_sizes)}")
 
-    print(f"Part 2: {(a,b)}.  {a[0] * b[0]}\n")
+    print(f"Part 2: {a[0] * b[0]}\n")
 
 
 if __name__ == "__main__":
