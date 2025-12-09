@@ -19,64 +19,58 @@ example_input = """7,1
 2,3
 7,3"""
 
+LEFT, RIGHT, UP, DOWN = (-1, 0), (1, 0), (0, -1), (0, 1)
+
 
 class Xy(NamedTuple):
     x: int
     y: int
 
+    def left_of(self, other: Self) -> bool:
+        return self.x < other.x
+
+    def below(self, other: Self) -> bool:
+        return self.y > other.y
+
 
 @cache
 def segments_cross(this_start: Xy, this_end: Xy, other_start: Xy, other_end: Xy) -> bool:
-    # if this_start == Xy(2, 3) and this_end == Xy(7, 3) and other_start == Xy(2, 3) and other_end == Xy(9, 3):
-    #     pass
+    if this_start == Xy(2, 3) and this_end == Xy(7, 3) and other_start == Xy(2, 3) and other_end == Xy(9, 3):
+        pass
 
-    x1, y1 = this_start.x, this_start.y
-    x2, y2 = this_end.x, this_end.y
-    x3, y3 = other_start.x, other_start.y
-    x4, y4 = other_end.x, other_end.y
+    # Normalise the coordinates to make life easier
+    x0, x1 = min(this_start.x, this_end.x), max(this_start.x, this_end.x)
+    y0, y1 = min(this_start.y, this_end.y), max(this_start.y, this_end.y)
+    other_x0, other_x1 = min(other_start.x, other_end.x), max(other_start.x, other_end.x)
+    other_y0, other_y1 = min(other_start.y, other_end.y), max(other_start.y, other_end.y)
 
-    # Normalize so we know which is vertical/horizontal
-    # First segment
-    if x1 == x2:  # a is vertical
-        ax = x1
-        ay1, ay2 = sorted((y1, y2))
-        a_vertical = True
-    else:  # a is horizontal
-        ay = y1
-        ax1, ax2 = sorted((x1, x2))
-        a_vertical = False
+    if (this_start.x == this_end.x) == (other_start.x == other_end.x):  # Colinear segments
 
-    # Second segment
-    if x3 == x4:  # b is vertical
-        bx = x3
-        by1, by2 = sorted((y3, y4))
-        b_vertical = True
-    else:  # b is horizontal
-        by = y3
-        bx1, bx2 = sorted((x3, x4))
-        b_vertical = False
-
-    # Case 1: one vertical, one horizontal -> check crossing box
-    if a_vertical and not b_vertical:
-        # a: x = ax, y in [ay1, ay2]
-        # b: y = by, x in [bx1, bx2]
-        return (bx1 <= ax <= bx2) and (ay1 <= by <= ay2)
-    if b_vertical and not a_vertical:
-        # b: x = bx, y in [by1, by2]
-        # a: y = ay, x in [ax1, ax2]
-        return (ax1 <= bx <= ax2) and (by1 <= ay <= by2)
-
-    # Case 2: both vertical: same x and overlapping y ranges
-    if a_vertical and b_vertical:
-        if ax != bx:
+        if this_start.x == this_end.x:  # Both vertical
             return False
-        return not (ay2 < by1 or by2 < ay1)
+            if x0 != other_x0:
+                return False
+            overlap = min(y1, other_y1) - max(y0, other_y0)
+            if overlap <= 0:
+                return False
+            return not (y0 <= other_y0 < other_y1 <= y1)
 
-    # Case 3: both horizontal: same y and overlapping x ranges
-    if not a_vertical and not b_vertical:
-        if ay != by:
+        else:  # Both horizontal
             return False
-        return not (ax2 < bx1 or bx2 < ax1)
+            if y0 != other_y0:
+                return False
+            overlap = min(x1, other_x1) - max(x0, other_x0)
+            if overlap <= 0:
+                return False
+            return not (x0 <= other_x0 < other_x1 <= x1)
+
+    # Non-colinear segments - N.B. if they share a vertex that's *not* an intersect
+    shared_vertex = {this_start, this_end} & {other_start, other_end}
+    if shared_vertex:
+        return False
+    if this_start.x == this_end.x:
+        return other_x0 <= x0 <= other_x1 and y0 <= other_y0 <= y1
+    return other_y0 <= y0 <= other_y1 and x0 <= other_x0 <= x1
 
 
 @cache
@@ -133,15 +127,6 @@ class Polygon:
 
         return inside
 
-    def contains_polygon(self, other: Self) -> bool:
-        if not all(self.contains_point(corner) for corner in other.vertices):
-            return False
-        for edge in self.edges:
-            for other_edge in other.edges:
-                if edge.intersects(other_edge):
-                    return False
-        return True
-
 
 class Rectangle(Polygon):
     def __init__(self, corner1: Xy, corner2: Xy) -> None:
@@ -165,20 +150,32 @@ def solve(inputs: str):
     while True:
         area, corner1, corner2 = heapq.heappop(largest_areas)
 
-        if corner1 == (9, 5) and corner2 == (2, 3):
-            pass
+        if not all(
+            polygon.contains_point(corner)
+            for corner in [corner1, Xy(corner2.x, corner1.y), corner2, Xy(corner1.x, corner2.y)]
+        ):
+            continue
 
-        if polygon.contains_polygon(Rectangle(corner1, corner2)):
-            break
+        min_x, max_x = min(corner1.x, corner2.x), max(corner1.x, corner2.x)
+        min_y, max_y = min(corner1.y, corner2.y), max(corner1.y, corner2.y)
 
-        if -area == 1566935900:
-            print("MISSED IT!")
-            print(corner1, corner2)
-            break
+        # if corner1 == (9, 5) and corner2 == (2, 3):
+        #     for x in range(max_x, min_x, -1):
+        #         assert polygon.contains_point(Xy(x, max_y))
+
+        if not all(polygon.contains_point(Xy(x, min_y)) for x in range(min_x + 1, max_x)):
+            continue
+        if not all(polygon.contains_point(Xy(max_x, y)) for y in range(min_y + 1, max_y)):
+            continue
+        if not all(polygon.contains_point(Xy(x, max_y)) for x in range(max_x - 1, min_x, -1)):
+            continue
+        if not all(polygon.contains_point(Xy(min_x, y)) for y in range(max_y, min_y, -1)):
+            continue
+        break
 
     print(f"Part 2: {area*-1}\n")
 
 
 if __name__ == "__main__":
     solve(example_input)
-    # solve(actual_input)
+    solve(actual_input)

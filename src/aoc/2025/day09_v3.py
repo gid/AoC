@@ -19,76 +19,75 @@ example_input = """7,1
 2,3
 7,3"""
 
+EAST, SOUTH, WEST, NORTH = (1, 0), (0, 1), (-1, 0), (0, -1)
+TURN_ANTICLOCKWISE = {EAST: NORTH, NORTH: WEST, WEST: SOUTH, SOUTH: EAST}
+TURN_CLOCKWISE = {EAST: SOUTH, SOUTH: WEST, WEST: NORTH, NORTH: EAST}
+TURN = {"L": TURN_ANTICLOCKWISE, "R": TURN_CLOCKWISE}
+
 
 class Xy(NamedTuple):
     x: int
     y: int
 
-
-@cache
-def segments_cross(this_start: Xy, this_end: Xy, other_start: Xy, other_end: Xy) -> bool:
-    # if this_start == Xy(2, 3) and this_end == Xy(7, 3) and other_start == Xy(2, 3) and other_end == Xy(9, 3):
-    #     pass
-
-    x1, y1 = this_start.x, this_start.y
-    x2, y2 = this_end.x, this_end.y
-    x3, y3 = other_start.x, other_start.y
-    x4, y4 = other_end.x, other_end.y
-
-    # Normalize so we know which is vertical/horizontal
-    # First segment
-    if x1 == x2:  # a is vertical
-        ax = x1
-        ay1, ay2 = sorted((y1, y2))
-        a_vertical = True
-    else:  # a is horizontal
-        ay = y1
-        ax1, ax2 = sorted((x1, x2))
-        a_vertical = False
-
-    # Second segment
-    if x3 == x4:  # b is vertical
-        bx = x3
-        by1, by2 = sorted((y3, y4))
-        b_vertical = True
-    else:  # b is horizontal
-        by = y3
-        bx1, bx2 = sorted((x3, x4))
-        b_vertical = False
-
-    # Case 1: one vertical, one horizontal -> check crossing box
-    if a_vertical and not b_vertical:
-        # a: x = ax, y in [ay1, ay2]
-        # b: y = by, x in [bx1, bx2]
-        return (bx1 <= ax <= bx2) and (ay1 <= by <= ay2)
-    if b_vertical and not a_vertical:
-        # b: x = bx, y in [by1, by2]
-        # a: y = ay, x in [ax1, ax2]
-        return (ax1 <= bx <= ax2) and (by1 <= ay <= by2)
-
-    # Case 2: both vertical: same x and overlapping y ranges
-    if a_vertical and b_vertical:
-        if ax != bx:
-            return False
-        return not (ay2 < by1 or by2 < ay1)
-
-    # Case 3: both horizontal: same y and overlapping x ranges
-    if not a_vertical and not b_vertical:
-        if ay != by:
-            return False
-        return not (ax2 < bx1 or bx2 < ax1)
+    def heading_towards(self, other: Self) -> tuple[int, int]:
+        if self.x == other.x:
+            return NORTH if self.y < other.y else SOUTH
+        elif self.y == other.y:
+            return EAST if self.x < other.x else WEST
+        else:
+            raise ValueError("Points are not aligned horizontally or vertically")
 
 
-@cache
-def segment_contains_point(start: Xy, end: Xy, p: Xy) -> bool:
-    if start.x == end.x:  # vertical segment
-        if p.x != start.x:
-            return False
-        return min(start.y, end.y) <= p.y <= max(start.y, end.y)
-    else:  # horizontal segment
-        if p.y != start.y:
-            return False
-        return min(start.x, end.x) <= p.x <= max(start.x, end.x)
+# @cache
+# def segments_cross(this_start: Xy, this_end: Xy, other_start: Xy, other_end: Xy) -> bool:
+#     if this_start == Xy(2, 3) and this_end == Xy(7, 3) and other_start == Xy(2, 3) and other_end == Xy(9, 3):
+#         pass
+
+#     # Normalise the coordinates to make life easier
+#     x0, x1 = min(this_start.x, this_end.x), max(this_start.x, this_end.x)
+#     y0, y1 = min(this_start.y, this_end.y), max(this_start.y, this_end.y)
+#     other_x0, other_x1 = min(other_start.x, other_end.x), max(other_start.x, other_end.x)
+#     other_y0, other_y1 = min(other_start.y, other_end.y), max(other_start.y, other_end.y)
+
+#     if (this_start.x == this_end.x) == (other_start.x == other_end.x):  # Colinear segments
+
+#         if this_start.x == this_end.x:  # Both vertical
+#             return False
+#             if x0 != other_x0:
+#                 return False
+#             overlap = min(y1, other_y1) - max(y0, other_y0)
+#             if overlap <= 0:
+#                 return False
+#             return not (y0 <= other_y0 < other_y1 <= y1)
+
+#         else:  # Both horizontal
+#             return False
+#             if y0 != other_y0:
+#                 return False
+#             overlap = min(x1, other_x1) - max(x0, other_x0)
+#             if overlap <= 0:
+#                 return False
+#             return not (x0 <= other_x0 < other_x1 <= x1)
+
+#     # Non-colinear segments - N.B. if they share a vertex that's *not* an intersect
+#     shared_vertex = {this_start, this_end} & {other_start, other_end}
+#     if shared_vertex:
+#         return False
+#     if this_start.x == this_end.x:
+#         return other_x0 <= x0 <= other_x1 and y0 <= other_y0 <= y1
+#     return other_y0 <= y0 <= other_y1 and x0 <= other_x0 <= x1
+
+
+# @cache
+# def segment_contains_point(start: Xy, end: Xy, p: Xy) -> bool:
+#     if start.x == end.x:  # vertical segment
+#         if p.x != start.x:
+#             return False
+#         return min(start.y, end.y) <= p.y <= max(start.y, end.y)
+#     else:  # horizontal segment
+#         if p.y != start.y:
+#             return False
+#         return min(start.x, end.x) <= p.x <= max(start.x, end.x)
 
 
 class Segment(NamedTuple):
@@ -114,6 +113,10 @@ class Polygon:
         self.vertices = vertices
         n = len(self.vertices)
         self.edges = [Segment(self.vertices[i], self.vertices[(i + 1) % n]) for i in range(n)]
+
+        in_out = {}
+        for prior_xy, this_xy, next_xy in zip([vertices[-1]] + vertices[:-1], vertices, vertices[1:] + [vertices[0]]):
+            in_out[this_xy] = (prior_xy.heading_towards(this_xy), this_xy.heading_towards(next_xy))
 
     @cache
     def contains_point(self, p: Xy) -> bool:
