@@ -81,47 +81,50 @@ def solve(inputs: str):
         if min_x == max_x or min_y == max_y:
             break
         good_area = True
+
+        if a_xy == (9, 5) and b_xy == (2, 3):
+            print("MISSED IT!")
         # Check horizontal and vertical borders and confirm no intersecting edges
         for x in range(min_x + 1, max_x):
             if any(
-                edge_x == x and edge_min_y < min_y < edge_max_y
+                edge_x == x and edge_min_y <= min_y <= edge_max_y
                 for edge_x, (edge_min_y, edge_max_y) in vertical_edges
             ):
                 good_area = False
             if any(
-                edge_x == x and edge_min_y < max_y < edge_max_y
+                edge_x == x and edge_min_y <= max_y <= edge_max_y
                 for edge_x, (edge_min_y, edge_max_y) in vertical_edges
             ):
                 good_area = False
-        for x in (min_x, max_x):
-            if not all(
-                edge_max_y < min_y
-                or edge_min_y > max_y
-                or (edge_min_y == min_y and edge_max_y == max_y)
-                for edge_x, (edge_min_y, edge_max_y) in vertical_edges
-                if edge_x == x
-            ):
-                good_area = False
+        # for x in (min_x, max_x):
+        #     if not all(
+        #         edge_max_y < min_y
+        #         or edge_min_y > max_y
+        #         or (edge_min_y <= min_y and edge_max_y >= max_y)
+        #         for edge_x, (edge_min_y, edge_max_y) in vertical_edges
+        #         if edge_x == x
+        #     ):
+        #         good_area = False
         for y in range(min_y + 1, max_y):
             if any(
-                edge_y == y and edge_min_x < min_x < edge_max_x
+                edge_y == y and edge_min_x <= min_x <= edge_max_x
                 for (edge_min_x, edge_max_x), edge_y in horizontal_edges
             ):
                 good_area = False
             if any(
-                edge_y == y and edge_min_x < max_x < edge_max_x
+                edge_y == y and edge_min_x <= max_x <= edge_max_x
                 for (edge_min_x, edge_max_x), edge_y in horizontal_edges
             ):
                 good_area = False
-        for y in (min_y, max_y):
-            if not all(
-                edge_max_x < min_x
-                or edge_min_x > max_x
-                or (edge_min_x == min_x and edge_max_x == max_x)
-                for (edge_min_x, edge_max_x), edge_y in horizontal_edges
-                if edge_y == y
-            ):
-                good_area = False
+        # for y in (min_y, max_y):
+        #     if not all(
+        #         edge_max_x < min_x
+        #         or edge_min_x > max_x
+        #         or (edge_min_x <= min_x and edge_max_x >= max_x)
+        #         for (edge_min_x, edge_max_x), edge_y in horizontal_edges
+        #         if edge_y == y
+        #     ):
+        #         good_area = False
 
         # # Start top left walking east and avoiding top rights
         # if any((x, min_y) in top_right for x in range(min_x, max_x)):
@@ -143,4 +146,4 @@ def solve(inputs: str):
 
 if __name__ == "__main__":
     solve(example_input)
-    # solve(actual_input)
+    solve(actual_input)
