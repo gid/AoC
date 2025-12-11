@@ -42,13 +42,14 @@ def parse_network(inputs: str):
 
 
 def topological_sort(graph):
-    """Kahn's algorithm: O(V+E)"""
-    indegree = dict((node, 0) for node in graph)
+    """Kahn's algorithm"""
+    indegree = defaultdict(int, {n: 0 for n in graph})
     for neighbors in graph.values():
         for neighbor in neighbors:
-            indegree[neighbor] = indegree.get(neighbor, 0) + 1
+            indegree[neighbor] += 1
 
-    queue = deque([node for node in indegree if indegree[node] == 0])
+    roots = [node for node in indegree if indegree[node] == 0]
+    queue = deque(roots)
     topo_order = []
     while queue:
         node = queue.popleft()
@@ -76,17 +77,6 @@ def count_paths(graph, source, target):
             paths_to_target[node] += paths_to_target[neighbor]
 
     return paths_to_target[source]
-
-
-def dfs(nodes, current, target, path, all_paths):
-    """Find all paths from current to target using DFS"""
-    if current == target:
-        all_paths.append(path.copy())
-        return
-    for neighbor in nodes.get(current, []):
-        path.append(neighbor)
-        dfs(nodes, neighbor, target, path, all_paths)
-        path.pop()
 
 
 def solve(inputs_part1: str, inputs_part2: str = ""):
