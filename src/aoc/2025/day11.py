@@ -84,15 +84,15 @@ def solve(inputs_part1: str, inputs_part2: str = ""):
     graph = parse_network(inputs_part1)
     print(f"Part 1: {count_paths(graph, 'you', 'out')}")
 
-    inputs = inputs_part2 or inputs_part1
-    graph = parse_network(inputs)
-
+    graph = parse_network(inputs_part2 or inputs_part1)
     svr_fft = count_paths(graph, "svr", "fft")
     svr_dac = count_paths(graph, "svr", "dac")
     fft_dac = count_paths(graph, "fft", "dac")
     dac_fft = count_paths(graph, "dac", "fft")
     dac_out = count_paths(graph, "dac", "out")
     fft_out = count_paths(graph, "fft", "out")
+    assert not fft_dac or not dac_fft  # No cycles... one of the below will be zero :)
+
     srv_fft_dac_out = svr_fft * fft_dac * dac_out
     srv_dac_fft_out = svr_dac * dac_fft * fft_out
     print(f"Part 2: {srv_fft_dac_out + srv_dac_fft_out}\n")
