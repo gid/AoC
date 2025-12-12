@@ -1,9 +1,9 @@
 """https://adventofcode.com/2025/day/12"""
 
-from collections import defaultdict
-from dataclasses import dataclass, field
+from collections.abc import Iterator
+from heapq import heappop, heappush
 
-from aoc_utils import get_input_data, print_time_taken
+from aoc_utils import get_input_data
 
 actual_input = get_input_data(2025, 12)
 
@@ -43,115 +43,108 @@ example_input = """0:
 12x5: 1 0 1 0 3 2"""
 
 
-class Xy(complex):
-    @property
-    def x(self) -> int:
-        return int(self.real)
-
-    @property
-    def y(self) -> int:
-        return int(self.imag)
-
-    def __init__(self, x, y):
-        super().__init__(x, y)
+TILE_PLACEMENT_OFFSETS = [complex(x, y) for x in range(-2, 3) for y in range(-2, 3) if (x, y) != (0, 0)]
+TILE_PLACEMENT_OFFSETS.sort(key=lambda p: (p.real**2 + p.imag**2, p.real, p.imag))
 
 
-TILE_PLACEMENT_OFFSETS = [Xy(x, y) for x in range(-2, 3) for y in range(-2, 3) if (x, y) != (0, 0)]
-TILE_PLACEMENT_OFFSETS.sort(key=lambda p: (p[0] ** 2 + p[1] ** 2, p[0], p[1]))
+def workable_region(
+    max_width: int, max_height: int, target: tuple[int, ...], shapes: dict[int, set[frozenset]], shape_sizes: dict[int, int]
+) -> bool:
+    """Checks if a region can fit all the shapes"""
+    if sum(shape_sizes[shape_id] * usage for shape_id, usage in enumerate(target)) > max_width * max_height:
+        return False  # Will never fit
 
+    if max_width // 3 * max_height // 3 >= sum(target):
+        return True  # Plenty of space to fit everything
 
-class Tile:
+    raise NotImplementedError("This problem is NP-Hard in general - no efficient solution known")
 
-    def __init__(self, tile_id: int, pattern_data: list[str]):
-        assert len(pattern_data) == 3 and all(len(row) == 3 for row in pattern_data)
-        self.tile_id = tile_id
-        pattern = set()
-        for y, row in enumerate(pattern_data, start=-1):
-            for x, ch in enumerate(row, start=-1):
-                if ch == "#":
-                    pattern.add(Xy(x, y))
-        self.transforms = set()
-        for _ in range(2):
-            for _ in range(4):
-                pattern = {-1j * p for p in pattern}  # Rotate 90° clockwise
-                self.transforms.add(pattern)
-            pattern = {-p.real + 1j * p.imag for p in pattern}  # Flip horizontal
+    # Code below was nice... but ultimately only worked on small stopping cases (failed on example 3)
 
+    def blob_width(blob: frozenset[complex]) -> int:
+        x_coords = [int(p.real) for p in blob]
+        return max(x_coords, default=-1) - min(x_coords, default=0) + 1
 
-@dataclass(slots=True)
-class Region:
+    def blob_height(blob: frozenset[complex]) -> int:
+        y_coords = [int(p.imag) for p in blob]
+        return max(y_coords, default=-1) - min(y_coords, default=0) + 1
 
-    max_width: int
-    max_height: int
-    target: tuple[int, int, int, int, int, int]
-    border_xy: set[tuple[Xy]] = field(default_factory=set)
-    filled_xy: set[tuple[Xy]] = field(default_factory=set)
-    tiles_used: list[int] = field(default_factory=lambda: [0, 0, 0, 0, 0, 0])
+    def possible_next_steps(
+        blob: frozenset[complex], shapes_needed: set[int]
+    ) -> Iterator[tuple[complex, int, frozenset[complex]]]:
+        placement_xys = set(blob_xy + offset for blob_xy in blob for offset in TILE_PLACEMENT_OFFSETS)
+        for shape_id, shape_patterns in shapes.items():
+            if shape_id not in shapes_needed:
+                continue
+            for shape_pattern in shape_patterns:
+                if not placement_xys:
+                    yield (complex(0, 0), shape_id, shape_pattern)
+                for placement_xy in placement_xys:
+                    if not any((placement_xy + p) in blob for p in shape_pattern):
+                        yield (placement_xy, shape_id, shape_pattern)
 
-    @property
-    def current_width(self) -> int:
-        if not self.filled_xy:
-            return 0
-        return max((p.x for p in self.filled_xy)) - min((p.x for p in self.filled_xy)) + 1
+    to_visit: list[tuple[int, int, frozenset[complex], tuple[int, ...]]] = []
+    initial_blob, initial_area = frozenset(), 0
+    heappush(to_visit, (sum(target), initial_area, initial_blob, target))
+    visited: set[frozenset[complex]] = set((initial_blob, target))
 
-    @property
-    def current_height(self) -> int:
-        if not self.filled_xy:
-            return 0
-        return max((p.y for p in self.filled_xy)) - min((p.y for p in self.filled_xy)) + 1
+    while to_visit:
+        _, _, current_blob, current_target = heappop(to_visit)
+        shapes_needed = {i for i, usage in enumerate(current_target) if usage > 0}
+        if not shapes_needed:
+            return True
+        next_steps = list(possible_next_steps(current_blob, shapes_needed))
+        for placement_xy, shape_id, shape_pattern in next_steps:
+            next_blob = frozenset(current_blob | {placement_xy + p for p in shape_pattern})
+            width, height = blob_width(next_blob), blob_height(next_blob)
 
-    def places_to_add_tile(self, tile: Tile) -> set[Xy]:
-        """Possible places to add tile to border of region."""
-        if not self.filled_xy:
-            return {Xy(0, 0)}
+            if width > max_width or height > max_height:
+                continue
+            next_target = tuple(t - 1 if i == shape_id else t for i, t in enumerate(current_target))
+            if (next_blob, next_target) in visited:
+                continue
+            visited.add((next_blob, next_target))
+            heappush(to_visit, (sum(next_target), width * height, next_blob, next_target))
 
-        possible_places = set()
-        for region_xy in self.filled_xy:
-            for delta in TILE_PLACEMENT_OFFSETS:
-                for xy in tile.pattern:
-                    if any(region_xy + delta + xy in self.filled_xy for xy in tile.pattern):
-                        break
-                else:
-                    possible_places.add(region_xy + delta)
-        return possible_places
-
-    def add_tile(self, tile: Tile, xy: Xy) -> None:
-        """Adds a tile at position xy and updates border."""
-        for tile_xy in tile.pattern:
-            self.filled_xy.add(xy + tile_xy)
-        self.tiles_used[tile.tile_id] += 1
+    return False
 
 
 def solve(inputs: str):
-    *all_tile_data, all_region_data = inputs.strip().split("\n\n")
+    *all_shape_data, all_region_data = inputs.strip().split("\n\n")
 
-    regions: list[Region] = []
+    regions = []
     for region_data in all_region_data.splitlines():
-        w_x_h, tile_usage = region_data.split(": ")
+        w_x_h, shape_usage = region_data.split(": ")
         width, height = map(int, w_x_h.split("x"))
-        target = tuple(map(int, tile_usage.split(" ")))
-        regions.append(Region(width, height, target))
+        target = tuple(map(int, shape_usage.split(" ")))
+        regions.append((width, height, target))
 
-    tiles: list[Tile] = []
-    for tile_data in all_tile_data.split("\n\n"):
-        id_line, *pattern_data = tile_data.splitlines()
-        tile_id = int(id_line.rstrip(":"))
-        tiles.append(Tile(tile_id, pattern_data))
+    shapes: dict[int, set[frozenset]] = {}
+    shape_sizes: dict[int, int] = {}
+    for shape_data in all_shape_data:
+        id_line, *pattern_data = shape_data.splitlines()
+        shape_id = int(id_line.rstrip(":"))
+        pattern: set[complex] = set()
+        for y, row in enumerate(pattern_data, start=-1):
+            for x, ch in enumerate(row, start=-1):
+                if ch == "#":
+                    pattern.add(complex(x, y))
+        shape_sizes[shape_id] = len(pattern)
+        shapes[shape_id] = set()
+        for _ in range(2):
+            for _ in range(4):
+                pattern = frozenset(-1j * p for p in pattern)  # Rotate 90° clockwise
+                shapes[shape_id].add(pattern)
+            pattern = frozenset(-p.real + 1j * p.imag for p in pattern)  # Flip horizontal
 
-    for region in regions:
-        for place_xy in region.places_to_add_tile(tile):
-            if (
-                region.current_width + tile.width <= region.max_width
-                and region.current_height + tile.height <= region.max_height
-            ):
-                region.add_tile(tile, place_xy)
+    workable_regions = 0
+    for i, (width, height, target) in enumerate(regions):
+        if workable_region(width, height, target, shapes, shape_sizes):
+            workable_regions += 1
 
-    values = tuple(map(int, inputs.splitlines()))
-
-    print(f"Part 1: {False}")
-    print(f"Part 2: {False}\n")
+    print(f"Part 1: {workable_regions}\n")
 
 
 if __name__ == "__main__":
-    solve(example_input)
-    # solve(actual_input)
+    # solve(example_input) NP-Hard on third example!
+    solve(actual_input)
