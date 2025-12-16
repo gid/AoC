@@ -1,4 +1,7 @@
-"""https://adventofcode.com/2025/day/10"""
+"""https://adventofcode.com/2025/day/10
+Based on the ideas discussed here:
+https://www.reddit.com/r/adventofcode/comments/1pk87hl/2025_day_10_part_2_bifurcate_your_way_to_victory/
+"""
 
 from collections import defaultdict
 from functools import cache
@@ -20,42 +23,46 @@ def minimum_presses(machine_spec: str) -> tuple[int, int]:
 
     indicators_spec, *wiring_schematics, joltage_spec = machine_spec.split(" ")
 
-    target_polarity = tuple(map(int, indicators_spec[1:-1].replace("#", "1").replace(".", "0")))
+    target_parity = tuple(map(int, indicators_spec[1:-1].replace("#", "1").replace(".", "0")))
     joltage_target = tuple(map(int, joltage_spec[1:-1].split(",")))
 
-    n_counters = len(joltage_target)
-
-    toggles = []
+    buttons = []
     for wiring_schematic in wiring_schematics:
-        button_ids = list(map(int, wiring_schematic[1:-1].split(",")))
-        toggles.append(tuple(int(i in button_ids) for i in range(n_counters)))
+        toggles = list(map(int, wiring_schematic[1:-1].split(",")))
+        buttons.append(tuple(int(i in toggles) for i in range(len(joltage_target))))
 
-    # Get all possible combinations of single button presses and store the resulting indicator polarity and joltage changes
-    button_combos = [tuple(combo) for r in range(1, len(toggles) + 1) for combo in combinations(toggles, r)]
-    combo_sums = {}
-    polarity_combos = defaultdict(list)
-    for combo in button_combos:
-        combo_sums[combo] = tuple(map(sum, zip(*combo)))
-        indicator_polarity = tuple(i % 2 for i in combo_sums[combo])
-        polarity_combos[indicator_polarity].append(combo)
+    # Get all possible combinations of single button presses and store the joltage changes and costs for each target parity
+    button_combos = [tuple(combo) for r in range(1, len(buttons) + 1) for combo in combinations(buttons, r)]
+    parity_combos = defaultdict(list)
+    for button_combo in button_combos:
+        cheapest_joltage_changes = defaultdict(dict)
+        joltage_change = tuple(map(sum, zip(*button_combo)))
+        indicator_parity = tuple(i % 2 for i in joltage_change)
+        cost_of_joltage_change = len(button_combo)
+        if cheapest_joltage_changes[indicator_parity].get(joltage_change, inf) > cost_of_joltage_change:
+            cheapest_joltage_changes[indicator_parity][joltage_change] = cost_of_joltage_change
+            parity_combos[indicator_parity].append((joltage_change, cost_of_joltage_change))
 
-    # Part 1 answer is the shortest combination of button presses that achieves the target indicator polarity
-    part1 = len(min(polarity_combos[target_polarity], key=len))
+    # Make sure to add an option for doing nothing (0 cost, 0 joltage change)
+    zero_change = tuple(0 for _ in joltage_target)
+    parity_combos[zero_change].append((zero_change, 0))
+
+    # Part 1 answer is the lowest combination of button presses that achieves the target indicator parity
+    part1 = min(cost for _, cost in parity_combos[target_parity])
 
     @cache
     def _minimum_presses(joltage_target: tuple[int, ...]) -> int:
         if all(j == 0 for j in joltage_target):
             return 0
 
-        target_polarity = tuple(j % 2 for j in joltage_target)
+        target_parity = tuple(j % 2 for j in joltage_target)
         retval = inf
-        for combo in polarity_combos[target_polarity]:
-            new_joltage_target = [target - combo_sum for target, combo_sum in zip(joltage_target, combo_sums[combo])]
+        for joltage_changes, cost in parity_combos[target_parity]:
+            new_joltage_target = [target - delta for target, delta in zip(joltage_target, joltage_changes)]
             if any(j < 0 for j in new_joltage_target):
                 continue
-            assert all(j % 2 == 0 for j in new_joltage_target)
             new_joltage_target = tuple(j // 2 for j in new_joltage_target)
-            retval = min(retval, len(combo) + 2 * _minimum_presses(new_joltage_target))
+            retval = min(retval, cost + 2 * _minimum_presses(new_joltage_target))
 
         return retval
 
@@ -66,11 +73,11 @@ def minimum_presses(machine_spec: str) -> tuple[int, int]:
 
 def solve(inputs: str):
     machine_specs = inputs.splitlines()
-    answers = [minimum_presses(machine_spec) for machine_spec in machine_specs[-1:]]
+    answers = [minimum_presses(machine_spec) for machine_spec in machine_specs]
     print(f"Part 1: {sum(answer[0] for answer in answers)}")
     print(f"Part 2: {sum(answer[1] for answer in answers)}\n")
 
 
 if __name__ == "__main__":
     solve(example_input)
-    # solve(actual_input)
+    solve(actual_input)
