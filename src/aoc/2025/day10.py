@@ -35,13 +35,10 @@ def minimum_presses(machine_spec: str) -> tuple[int, int]:
     button_combos = [tuple(combo) for r in range(1, len(buttons) + 1) for combo in combinations(buttons, r)]
     parity_combos = defaultdict(list)
     for button_combo in button_combos:
-        cheapest_joltage_changes = defaultdict(dict)
         joltage_change = tuple(map(sum, zip(*button_combo)))
         indicator_parity = tuple(i % 2 for i in joltage_change)
         cost_of_joltage_change = len(button_combo)
-        if cheapest_joltage_changes[indicator_parity].get(joltage_change, inf) > cost_of_joltage_change:
-            cheapest_joltage_changes[indicator_parity][joltage_change] = cost_of_joltage_change
-            parity_combos[indicator_parity].append((joltage_change, cost_of_joltage_change))
+        parity_combos[indicator_parity].append((joltage_change, cost_of_joltage_change))
 
     # Make sure to add an option for doing nothing (0 cost, 0 joltage change)
     zero_change = tuple(0 for _ in joltage_target)
